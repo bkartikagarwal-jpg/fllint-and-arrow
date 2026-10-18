@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flint & Arrow — Website Developer Portfolio</title>
+<style>
+:root{--bg:#f6efe4;--card:#fffaf1;--ink:#2a211b;--mute:#6f6257;--clay:#b5573a;--line:#e3d6c2;--on-clay:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--card:#0f0d0b;--ink:#f3eadd;--mute:#a79a8b;--clay:#d97a58;--line:#2a2420;--on-clay:#000}}
+:root[data-theme="dark"]{--bg:#000;--card:#0f0d0b;--ink:#f3eadd;--mute:#a79a8b;--clay:#d97a58;--line:#2a2420;--on-clay:#000}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2,h3,.logo{font-family:Georgia,"Times New Roman",serif;line-height:1.2;margin:0}
+.wrap{max-width:1000px;margin:0 auto;padding:0 22px}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px 0}
+.logo{font-size:1.35rem;font-weight:700}.logo span{color:var(--clay)}
+nav{display:flex;gap:18px;align-items:center;font-size:.95rem}
+nav a{color:var(--mute);text-decoration:none}nav a:hover{color:var(--clay)}
+#theme{background:none;border:1px solid var(--line);color:var(--ink);border-radius:20px;padding:4px 12px;cursor:pointer;font:inherit;font-size:.85rem}
+.hero{padding:64px 0 48px}
+.tag{color:var(--clay);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:.8rem}
+h1{font-size:clamp(2.1rem,6vw,3.6rem);margin:12px 0 16px;max-width:15em}
+.hero p{max-width:36em;color:var(--mute);font-size:1.1rem}
+.btn{display:inline-block;margin-top:22px;padding:12px 24px;border-radius:30px;background:var(--clay);color:var(--on-clay);text-decoration:none;font-weight:600}
+section{padding:48px 0;border-top:1px solid var(--line)}
+h2{font-size:1.8rem;margin-bottom:8px}
+.sub{color:var(--mute);margin:0 0 28px;max-width:38em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.thumb{height:130px;display:flex;align-items:flex-end;padding:12px;font-family:Georgia,serif;font-size:1.15rem;color:#fff}
+.card .b{padding:16px}
+.card h3{font-size:1.15rem}
+.card p{margin:8px 0 10px;color:var(--mute);font-size:.94rem}
+.card a{text-decoration:none}.visit{display:inline-block;margin:0 14px 10px 0;color:var(--clay);font-weight:600;font-size:.9rem}.visit:hover{text-decoration:underline!important}
+.chip{display:inline-block;font-size:.75rem;border:1px solid var(--line);border-radius:20px;padding:2px 10px;margin:0 6px 6px 0;color:var(--mute)}
+.chip.s{border-color:var(--clay);color:var(--clay)}
+.skills{display:flex;flex-wrap:wrap;gap:10px}
+.skills span{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:6px 16px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px}
+.steps div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.steps b{color:var(--clay);font-family:Georgia,serif;font-size:1.5rem}
+.note{color:var(--mute);font-size:.92rem;max-width:40em}
+.mail{font-family:Georgia,serif;font-size:clamp(1.2rem,4vw,1.8rem);color:var(--clay);word-break:break-all}
+#book{display:grid;gap:14px;max-width:640px;margin:0 0 26px;color-scheme:light dark}
+#book .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#book label{display:grid;gap:6px;font-size:.88rem;color:var(--mute)}
+#book input,#book select,#book textarea{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+#book input:focus,#book select:focus,#book textarea:focus{outline:2px solid var(--clay);outline-offset:1px}
+#book textarea{min-height:110px;resize:vertical}
+#book .btn{border:0;cursor:pointer;font:inherit;font-weight:600;margin-top:0;justify-self:start}
+#book .btn:disabled{opacity:.6;cursor:default}
+#book .hp{display:none}
+#bstatus{min-height:1.4em;color:var(--mute);font-size:.92rem}
+@media(max-width:560px){#book .row{grid-template-columns:1fr}}
+footer{padding:30px 0 40px;color:var(--mute);font-size:.88rem;border-top:1px solid var(--line)}
+@media(max-width:560px){nav a.h{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo">Flint <span>&amp;</span> Arrow</div>
+  <nav><a class="h" href="#work">Work</a><a class="h" href="#about">About</a><a class="h" href="#process">Process</a><a href="#contact">Contact</a><button id="theme" aria-label="Toggle theme">Theme</button></nav>
+</header>
+
+<div class="hero">
+  <div class="tag">Website Developer</div>
+  <h1>Simple, Clean Websites For Small Businesses.</h1>
+  <p>I'm a B.Tech CSE student who builds websites with the help of AI tools, then checks and shapes every page by hand. Here's what I've made so far.</p>
+  <a class="btn" href="#work">See My Work</a>
+</div>
+
+<section id="work">
+  <h2>Selected Work</h2>
+  <p class="sub">A mix of a hackathon project and sample websites I designed for local businesses.</p>
+  <div class="grid">
+    <div class="card"><div class="thumb" style="background:linear-gradient(135deg,#3b4a6b,#6b7fa8)">ByteSoft</div><div class="b">
+      <h3>ByteSoft Workspace Dashboard</h3>
+      <p>A unified workspace for projects, meetings, leave, attendance and chat, with an AI assistant called Byte. Built with my team for SIH.</p>
+      <a class="visit" href="https://bytesoft.onrender.com" target="_blank" rel="noopener">Live Demo →</a><br>
+      <p style="font-size:.8rem;margin:0 0 10px">Test version: it may take up to a minute to load, and demo data can reset.</p>
+      <span class="chip s">Hackathon</span><span class="chip">Dashboard</span><span class="chip">AI Assistant</span></div></div>
+    <div class="card"><div class="thumb" style="background:linear-gradient(135deg,#5a4636,#a07c5a)">Cafe Samples</div><div class="b">
+      <h3>Cafe Website Samples</h3>
+      <p>Sample websites designed for cafes.</p>
+      <a class="visit" href="https://spacedoutcafe-sampl.netlify.app/" target="_blank" rel="noopener">Cafe Sample 1 →</a><a class="visit" href="https://brewberry-sample.netlify.app/" target="_blank" rel="noopener">Cafe Sample 2 →</a><br>
+      <span class="chip s">Sample Sites</span><span class="chip">Cafe</span></div></div>
+    <div class="card"><div class="thumb" style="background:linear-gradient(135deg,#2f3a2f,#5f7a5a)">Gym Samples</div><div class="b">
+      <h3>Gym Website Samples</h3>
+      <p>Sample websites designed for gyms.</p>
+      <a class="visit" href="https://aarambh-gyms-professional.netlify.app/" target="_blank" rel="noopener">Gym Sample 1 →</a><a class="visit" href="https://amogha-fitness-sample.netlify.app/" target="_blank" rel="noopener">Gym Sample 2 →</a><br>
+      <span class="chip s">Sample Sites</span><span class="chip">Fitness</span></div></div>
+  </div>
+  <p class="note" style="margin-top:22px">Sample sites are concept designs I made to show what a business's website could look like. They are not official sites of those businesses.</p>
+</section>
+
+<section id="about">
+  <h2>About Me</h2>
+  <p class="sub">I'm Kartik, a computer science student at Bennett University. I got hooked on building websites at a hackathon and now I make them for others. I'm early in my journey, and I'm upfront that AI is part of my workflow: it speeds up the building, and I focus on design, content and making sure everything works.</p>
+  <div class="skills"><span>HTML</span><span>CSS</span><span>JavaScript Basics</span><span>Responsive Design</span><span>Dark Mode</span><span>Netlify &amp; Render Hosting</span><span>AI-Assisted Development</span></div>
+</section>
+
+<section id="process">
+  <h2>How I Work</h2>
+  <p class="sub">Straightforward and easy to follow.</p>
+  <div class="steps">
+    <div><b>1</b><h3>Talk</h3><p class="note">You tell me about your business and what you need on the site.</p></div>
+    <div><b>2</b><h3>Design</h3><p class="note">I build a draft you can open on your phone and react to.</p></div>
+    <div><b>3</b><h3>Refine</h3><p class="note">We tweak colours, text and layout until you like it.</p></div>
+    <div><b>4</b><h3>Launch</h3><p class="note">I put it online and make sure it works on every screen.</p></div>
+  </div>
+</section>
+
+<section id="contact">
+  <h2>Let's Build Yours</h2>
+  <p class="sub">Tell me about your business and I’ll reply soon. You can also pick a day for a call.</p>
+  <form id="book" name="booking" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+    <input type="hidden" name="form-name" value="booking">
+    <p class="hp"><label>Leave this empty <input name="bot-field"></label></p>
+    <div class="row">
+      <label>Your Name<input name="name" required autocomplete="name"></label>
+      <label>Email<input name="email" type="email" required autocomplete="email"></label>
+    </div>
+    <div class="row">
+      <label>Phone or WhatsApp (optional)<input name="phone" type="tel" autocomplete="tel"></label>
+      <label>What Do You Need?<select name="service"><option>Cafe Website</option><option>Gym Website</option><option>Business Website</option><option>Something Else</option></select></label>
+    </div>
+    <label>Preferred Date for a Call (optional)<input name="preferred_date" type="date"></label>
+    <label>Message<textarea name="message" required placeholder="Tell me a little about your business…"></textarea></label>
+    <button class="btn" type="submit">Send Message</button>
+    <div id="bstatus" role="status"></div>
+  </form>
+  <p class="note" style="margin:0 0 6px">Or email me directly:</p>
+  <a class="mail" href="mailto:flintarrow.web@gmail.com">flintarrow.web@gmail.com</a>
+</section>
+
+<footer>© <span id="yr"></span> Flint &amp; Arrow</footer>
+</div>
+<script>
+(function(){var f=document.getElementById('book'),st=document.getElementById('bstatus');
+f.addEventListener('submit',function(e){e.preventDefault();var b=f.querySelector('button');b.disabled=true;st.textContent='Sending…';
+fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(new FormData(f)).toString()})
+.then(function(r){if(!r.ok)throw new Error('x');f.reset();st.textContent='Thank you! I got your message and I’ll reply soon.';})
+.catch(function(){st.textContent='Could not send right now. Please email me at flintarrow.web@gmail.com.';})
+.then(function(){b.disabled=false;});});})();
+document.getElementById('yr').textContent=new Date().getFullYear();
+var r=document.documentElement,b=document.getElementById('theme');
+try{var t=localStorage.getItem('fa-theme');if(t)r.setAttribute('data-theme',t)}catch(e){}
+b.onclick=function(){
+  var dark=r.getAttribute('data-theme')==='dark'||(!r.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme: dark)').matches);
+  var n=dark?'light':'dark';r.setAttribute('data-theme',n);
+  try{localStorage.setItem('fa-theme',n)}catch(e){}
+};
+</script>
+</body>
+</html>
