@@ -1,20 +1,40 @@
 // server.js - Flint & Arrow website backend
-// Serves the website pages and saves every form submission to messages.json.
+// Serves the website pages, saves every form submission to messages.json,
+// and emails each new message to you through Brevo.
 //
 // Environment variables (set them on Render under Environment):
-//   ADMIN_KEY  a long secret word. Needed to open /admin/messages?key=YOUR_KEY
-//   DATA_DIR   optional folder for messages.json (default: next to server.js)
-//   PORT       set automatically by Render
+//   ADMIN_KEY         a long secret word. Needed to open /admin/messages?key=YOUR_KEY
+//   BREVO_SMTP_USER   SMTP login from Brevo (SMTP & API page)
+//   BREVO_SMTP_KEY    SMTP key from Brevo
+//   NOTIFY_EMAIL      where new messages are sent (flintarrow.web@gmail.com)
+//   DATA_DIR          optional folder for messages.json (default: next to server.js)
+//   PORT              set automatically by Render
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || __dirname;
 const FILE = path.join(DATA_DIR, 'messages.json');
 const ADMIN_KEY = process.env.ADMIN_KEY || '';
+
+// ---- Email notifications (Brevo SMTP) --------------------------------------
+const EMAIL_ENABLED = !!(process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_KEY && process.env.NOTIFY_EMAIL);
+const transporter = EMAIL_ENABLED
+  ? nodemailer.createTransport({
+      host: 'smtp-relay.brevo.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.BREVO_SMTP_USER,
+        pass: process.env.BREVO_SMTP_KEY
+      }
+    })
+  : null;
+if (!EMAIL_ENABLED) console.log('Email notifications are OFF (set BREVO_SMTP_USER, BREVO_SMTP_KEY and NOTIFY_EMAIL).');
 
 app.set('trust proxy', 1); // Render puts a proxy in front of the app
 app.disable('x-powered-by');
@@ -52,6 +72,26 @@ function page(title, bodyHtml) {
     'a{color:#b5573a}table{border-collapse:collapse;width:100%;background:#fffaf1}' +
     'th,td{border:1px solid #e3d6c2;padding:8px 10px;text-align:left;vertical-align:top;font-size:.92rem}' +
     'th{background:#efe3d0}</style></head><body><h1>' + esc(title) + '</h1>' + bodyHtml + '</body></html>';
+}
+
+// Sends the new message to your inbox. Never throws: if the email fails,
+// the message is still safely saved in messages.json.
+function notifyByEmail(entry) {
+  if (!EMAIL_ENABLED) return;
+  const subjectName = entry.name.replace(/[\r\n]+/g, ' ');
+  transporter.sendMail({
+    from: '"Flint & Arrow Website" <bkartikagarwal@gmail.com>', // must be your verified Brevo sender
+    to: process.env.NOTIFY_EMAIL,
+    replyTo: entry.email,
+    subject: 'New enquiry from ' + subjectName,
+    text:
+      'Name: ' + entry.name + '\n' +
+      'Email: ' + entry.email + '\n' +
+      'Phone: ' + (entry.phone || '-') + '\n' +
+      'Needs: ' + (entry.service || '-') + '\n' +
+      'Call date: ' + (entry.preferred_date || '-') + '\n\n' +
+      entry.message
+  }).catch(err => console.error('Email failed:', err.message));
 }
 
 // ---- Storage (messages.json) ----------------------------------------------
@@ -103,59 +143,4 @@ app.post('/submit-form', async (req, res) => {
     date: new Date().toISOString(),
     name: clean(b.name, 100),
     email: clean(b.email, 200),
-    phone: clean(b.phone, 40),
-    service: clean(b.service, 60),
-    preferred_date: clean(b.preferred_date, 20),
-    message: clean(b.message, 5000)
-  };
-  if (!entry.name || !entry.message) return reply(400, false, 'Please enter your name and a message.');
-  if (!EMAIL.test(entry.email)) return reply(400, false, 'Please enter a valid email address.');
-
-  messages.push(entry);
-  try {
-    await save();
-  } catch (err) {
-    console.error('Could not save message:', err.message);
-    messages = messages.filter(m => m !== entry);
-    return reply(500, false, 'Could not save your message. Please email me instead.');
-  }
-  reply(200, true, 'Your message has been received.');
-});
-
-// ---- Private page for you to read the messages ------------------------------
-function isAdmin(req) {
-  if (!ADMIN_KEY) return false; // page is switched off until you set ADMIN_KEY
-  const given = String(req.query.key || req.get('x-admin-key') || '');
-  const a = crypto.createHash('sha256').update(given).digest();
-  const b = crypto.createHash('sha256').update(ADMIN_KEY).digest();
-  return crypto.timingSafeEqual(a, b);
-}
-
-app.get('/admin/messages', (req, res) => {
-  if (!isAdmin(req)) return res.status(404).send('Not found');
-  res.set({ 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' });
-  const list = messages.slice().reverse(); // newest first
-  if (req.query.format === 'json') return res.json(list);
-  const rows = list.map(m =>
-    '<tr><td>' + esc(new Date(m.date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })) + '</td>' +
-    '<td>' + esc(m.name) + '</td>' +
-    '<td><a href="mailto:' + esc(m.email) + '">' + esc(m.email) + '</a></td>' +
-    '<td>' + esc(m.phone || '') + '</td>' +
-    '<td>' + esc(m.service || '') + '</td>' +
-    '<td>' + esc(m.preferred_date || '') + '</td>' +
-    '<td style="white-space:pre-wrap">' + esc(m.message) + '</td></tr>').join('');
-  res.send(page('Messages (' + list.length + ')',
-    '<p>Newest first. Keep this link private. Add <code>&amp;format=json</code> to download the data.</p>' +
-    '<div style="overflow-x:auto"><table><tr><th>Date (IST)</th><th>Name</th><th>Email</th><th>Phone</th>' +
-    '<th>Needs</th><th>Call date</th><th>Message</th></tr>' + rows + '</table></div>'));
-});
-
-// ---- Everything else -------------------------------------------------------
-app.use((req, res) =>
-  res.status(404).send(page('Page not found', '<p><a href="/">Back to the website</a></p>')));
-app.use((err, req, res, next) => {
-  if (res.headersSent) return next(err);
-  res.status(err.status || 500).send('Something went wrong.');
-});
-
-app.listen(PORT, () => console.log('Server running on port ' + PORT));
+    phone:
