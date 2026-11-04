@@ -4,8 +4,7 @@
 //
 // Environment variables (set them on Render under Environment):
 //   ADMIN_KEY         a long secret word. Needed to open /admin/messages?key=YOUR_KEY
-//   BREVO_SMTP_USER   SMTP login from Brevo (SMTP & API page)
-//   BREVO_SMTP_KEY    SMTP key from Brevo
+//   BREVO_API_KEY     API key from Brevo (SMTP & API page, "API Keys" tab)
 //   NOTIFY_EMAIL      where new messages are sent (flintarrow.web@gmail.com)
 //   DATA_DIR          optional folder for messages.json (default: next to server.js)
 //   PORT              set automatically by Render
@@ -13,7 +12,6 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,20 +19,9 @@ const DATA_DIR = process.env.DATA_DIR || __dirname;
 const FILE = path.join(DATA_DIR, 'messages.json');
 const ADMIN_KEY = process.env.ADMIN_KEY || '';
 
-// ---- Email notifications (Brevo SMTP) --------------------------------------
-const EMAIL_ENABLED = !!(process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_KEY && process.env.NOTIFY_EMAIL);
-const transporter = EMAIL_ENABLED
-  ? nodemailer.createTransport({
-      host: 'smtp-relay.brevo.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: process.env.BREVO_SMTP_USER,
-        pass: process.env.BREVO_SMTP_KEY
-      }
-    })
-  : null;
-if (!EMAIL_ENABLED) console.log('Email notifications are OFF (set BREVO_SMTP_USER, BREVO_SMTP_KEY and NOTIFY_EMAIL).');
+// ---- Email notifications (Brevo HTTP API, works on Render's free plan) ------
+const EMAIL_ENABLED = !!(process.env.BREVO_API_KEY && process.env.NOTIFY_EMAIL);
+if (!EMAIL_ENABLED) console.log('Email notifications are OFF (set BREVO_API_KEY and NOTIFY_EMAIL).');
 
 app.set('trust proxy', 1); // Render puts a proxy in front of the app
 app.disable('x-powered-by');
@@ -79,19 +66,32 @@ function page(title, bodyHtml) {
 function notifyByEmail(entry) {
   if (!EMAIL_ENABLED) return;
   const subjectName = entry.name.replace(/[\r\n]+/g, ' ');
-  transporter.sendMail({
-    from: '"Flint & Arrow Website" <bkartikagarwal@gmail.com>', // must be your verified Brevo sender
-    to: process.env.NOTIFY_EMAIL,
-    replyTo: entry.email,
-    subject: 'New enquiry from ' + subjectName,
-    text:
-      'Name: ' + entry.name + '\n' +
-      'Email: ' + entry.email + '\n' +
-      'Phone: ' + (entry.phone || '-') + '\n' +
-      'Needs: ' + (entry.service || '-') + '\n' +
-      'Call date: ' + (entry.preferred_date || '-') + '\n\n' +
-      entry.message
-  }).catch(err => console.error('Email failed:', err.message));
+  fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'api-key': process.env.BREVO_API_KEY,
+      'content-type': 'application/json',
+      accept: 'application/json'
+    },
+    body: JSON.stringify({
+      sender: { name: 'Flint & Arrow Website', email: 'bkartikagarwal@gmail.com' }, // must be your verified Brevo sender
+      to: [{ email: process.env.NOTIFY_EMAIL }],
+      replyTo: { email: entry.email, name: subjectName },
+      subject: 'New enquiry from ' + subjectName,
+      textContent:
+        'Name: ' + entry.name + '\n' +
+        'Email: ' + entry.email + '\n' +
+        'Phone: ' + (entry.phone || '-') + '\n' +
+        'Needs: ' + (entry.service || '-') + '\n' +
+        'Call date: ' + (entry.preferred_date || '-') + '\n\n' +
+        entry.message
+    }),
+    signal: AbortSignal.timeout(15000)
+  })
+    .then(async r => {
+      if (!r.ok) console.error('Email failed:', r.status, await r.text());
+    })
+    .catch(err => console.error('Email failed:', err.message));
 }
 
 // ---- Storage (messages.json) ----------------------------------------------
