@@ -143,4 +143,61 @@ app.post('/submit-form', async (req, res) => {
     date: new Date().toISOString(),
     name: clean(b.name, 100),
     email: clean(b.email, 200),
-    phone:
+    phone: clean(b.phone, 40),
+    service: clean(b.service, 60),
+    preferred_date: clean(b.preferred_date, 20),
+    message: clean(b.message, 5000)
+  };
+  if (!entry.name || !entry.message) return reply(400, false, 'Please enter your name and a message.');
+  if (!EMAIL.test(entry.email)) return reply(400, false, 'Please enter a valid email address.');
+
+  messages.push(entry);
+  try {
+    await save();
+  } catch (err) {
+    console.error('Could not save message:', err.message);
+    messages = messages.filter(m => m !== entry);
+    return reply(500, false, 'Could not save your message. Please email me instead.');
+  }
+
+  notifyByEmail(entry); // runs in the background, does not slow down the visitor
+  reply(200, true, 'Your message has been received.');
+});
+
+// ---- Private page for you to read the messages ------------------------------
+function isAdmin(req) {
+  if (!ADMIN_KEY) return false; // page is switched off until you set ADMIN_KEY
+  const given = String(req.query.key || req.get('x-admin-key') || '');
+  const a = crypto.createHash('sha256').update(given).digest();
+  const b = crypto.createHash('sha256').update(ADMIN_KEY).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
+app.get('/admin/messages', (req, res) => {
+  if (!isAdmin(req)) return res.status(404).send('Not found');
+  res.set({ 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' });
+  const list = messages.slice().reverse(); // newest first
+  if (req.query.format === 'json') return res.json(list);
+  const rows = list.map(m =>
+    '<tr><td>' + esc(new Date(m.date).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })) + '</td>' +
+    '<td>' + esc(m.name) + '</td>' +
+    '<td><a href="mailto:' + esc(m.email) + '">' + esc(m.email) + '</a></td>' +
+    '<td>' + esc(m.phone || '') + '</td>' +
+    '<td>' + esc(m.service || '') + '</td>' +
+    '<td>' + esc(m.preferred_date || '') + '</td>' +
+    '<td style="white-space:pre-wrap">' + esc(m.message) + '</td></tr>').join('');
+  res.send(page('Messages (' + list.length + ')',
+    '<p>Newest first. Keep this link private. Add <code>&amp;format=json</code> to download the data.</p>' +
+    '<div style="overflow-x:auto"><table><tr><th>Date (IST)</th><th>Name</th><th>Email</th><th>Phone</th>' +
+    '<th>Needs</th><th>Call date</th><th>Message</th></tr>' + rows + '</table></div>'));
+});
+
+// ---- Everything else -------------------------------------------------------
+app.use((req, res) =>
+  res.status(404).send(page('Page not found', '<p><a href="/">Back to the website</a></p>')));
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).send('Something went wrong.');
+});
+
+app.listen(PORT, () => console.log('Server running on port ' + PORT));
